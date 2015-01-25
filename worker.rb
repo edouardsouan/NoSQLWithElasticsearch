@@ -50,31 +50,35 @@ class CrawlerWorker < Worker
 		result = Net::HTTP.get_response(URI.parse(url)).body
 		doc = Nokogiri::HTML(result)
 
-		page = {}
+		page = {title:" ", description: " ", keywords:[]}
 
 		doc.xpath('//title').each do |title|
 			page[:title] = title.content.split(" ")[0]
-			puts "The title of this Website is : #{title.content.split(" ")[0]}"
+			puts "The title of this Website is : #{title.content.split(' ')[0]}"
 		end
 
 		doc.xpath("//meta[@name='description']/@content").each do |description|
-			if !description.nil?
-				page[:description] = description.content
+			puts description
+			if description != ""
+				page[:description] = description.content.gsub("'", %q(\\'))
 			else
-				page[:description] = " "
+				page[:description] = "No description"
 			end
 		end
 
 		doc.xpath("//meta[@name='keywords']/@content").each do |keywords|
-			if !keywords.nil?
+			if keywords != ""
 				keywords = keywords.content.split(",").to_a
 				page[:keywords] = keywords
 			else
-				page[:keywords] = " "
+				page[:keywords] = "No keywords"
 			end
 		end
+
 		page = page.to_json
-		`curl -XPOST localhost:9200/web/pages -d '#{page}'`
+		puts page
+
+		`curl -XPOST localhost:9200/web/pages/ -d'#{page}'`
 	end
 
 	def GetNumberOfWaitingJobs()
